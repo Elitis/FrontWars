@@ -452,11 +452,16 @@ export class ClientGameRunner {
       return;
     }
 
+    const requestedLevels = Math.max(1, event.levels ?? 1);
+
     this.myPlayer.actions(tile).then((actions) => {
+      // Collect possible upgrades with distance.
       const upgradeUnits: {
         unitId: number;
         unitType: UnitType;
         distance: number;
+        cost: bigint;
+        level: number; // Current level when chosen.
       }[] = [];
 
       for (const bu of actions.buildableUnits) {
@@ -469,24 +474,51 @@ export class ClientGameRunner {
               tile,
               existingUnit.tile(),
             );
-
+            // Cost of a single upgrade (assumed constant per request at UI level).
             upgradeUnits.push({
               unitId: bu.canUpgrade,
               unitType: bu.type,
               distance,
+              cost: bu.cost,
+              level: existingUnit.level(),
             });
           }
         }
       }
 
-      if (upgradeUnits.length > 0) {
-        upgradeUnits.sort((a, b) => a.distance - b.distance);
-        const bestUpgrade = upgradeUnits[0];
+      if (upgradeUnits.length === 0) {
+        return;
+      }
 
+      upgradeUnits.sort((a, b) => a.distance - b.distance);
+      const target = upgradeUnits[0];
+
+      // Determine how many levels we can afford (up to requestedLevels).
+      let affordableLevels = 0;
+      const playerGold = this.myPlayer?.gold() ?? 0n;
+      let remainingGold = playerGold;
+
+      // Assuming linear cost (same each level) until server rejects when too expensive.
+      for (let i = 0; i < requestedLevels; i++) {
+        if (remainingGold >= target.cost) {
+          remainingGold -= target.cost;
+          affordableLevels++;
+        }
+        else {
+          break;
+        }
+      }
+
+      if (affordableLevels === 0) {
+        // Fallback: do single attempt anyway in case cost changed or UI stale.
+        affordableLevels = 1;
+      }
+
+      for (let i = 0; i < affordableLevels; i++) {
         this.eventBus.emit(
           new SendUpgradeStructureIntentEvent(
-            bestUpgrade.unitId,
-            bestUpgrade.unitType,
+            target.unitId,
+            target.unitType,
           ),
         );
       }

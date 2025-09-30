@@ -111,6 +111,7 @@ export class AutoUpgradeEvent implements GameEvent {
   constructor(
     public readonly x: number,
     public readonly y: number,
+    public readonly levels: number = 1, // Number of upgrade levels the user wants to attempt (default 1).
   ) {}
 }
 
@@ -346,7 +347,8 @@ export class InputHandler {
   private onPointerDown(event: PointerEvent) {
     if (event.button === 1) {
       event.preventDefault();
-      this.eventBus.emit(new AutoUpgradeEvent(event.clientX, event.clientY));
+      const levels = event.shiftKey ? 10 : 1;
+      this.eventBus.emit(new AutoUpgradeEvent(event.clientX, event.clientY, levels));
       return;
     }
 

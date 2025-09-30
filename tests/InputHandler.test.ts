@@ -10,6 +10,7 @@ class MockPointerEvent {
   clientY: number;
   pointerId: number;
   type: string;
+  shiftKey: boolean;
   preventDefault: () => void;
 
   constructor(type: string, init: any) {
@@ -18,6 +19,7 @@ class MockPointerEvent {
     this.clientX = init.clientX;
     this.clientY = init.clientY;
     this.pointerId = init.pointerId;
+    this.shiftKey = !!init.shiftKey;
     this.preventDefault = jest.fn();
   }
 }
@@ -40,7 +42,7 @@ describe("InputHandler AutoUpgrade", () => {
   });
 
   describe("Middle Mouse Button Handling", () => {
-    test("should emit AutoUpgradeEvent on middle mouse button press", () => {
+    test("should emit AutoUpgradeEvent on middle mouse button press (levels=1)", () => {
       const mockEmit = jest.spyOn(eventBus, "emit");
 
       const pointerEvent = new PointerEvent("pointerdown", {
@@ -48,6 +50,7 @@ describe("InputHandler AutoUpgrade", () => {
         clientX: 150,
         clientY: 250,
         pointerId: 1,
+        shiftKey: false,
       });
 
       inputHandler["onPointerDown"](pointerEvent);
@@ -56,6 +59,30 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: 150,
           y: 250,
+          levels: 1,
+        }),
+      );
+    });
+
+    test("should emit AutoUpgradeEvent with levels=10 when shift is held on middle click", () => {
+      const mockEmit = jest.spyOn(eventBus, "emit");
+
+      const pointerEvent = new PointerEvent("pointerdown", {
+        button: 1,
+        clientX: 300,
+        clientY: 400,
+        pointerId: 2,
+        shiftKey: true,
+      });
+
+      // @ts-ignore private
+      inputHandler["onPointerDown"](pointerEvent);
+
+      expect(mockEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          x: 300,
+          y: 400,
+          levels: 10,
         }),
       );
     });
@@ -156,6 +183,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: 0,
           y: 0,
+          levels: 1,
         }),
       );
     });
@@ -176,6 +204,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: -100,
           y: -200,
+          levels: 1,
         }),
       );
     });
@@ -196,6 +225,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: 100.5,
           y: 200.7,
+          levels: 1,
         }),
       );
     });
@@ -264,6 +294,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: Number.MAX_SAFE_INTEGER,
           y: Number.MAX_SAFE_INTEGER,
+          levels: 1,
         }),
       );
     });
@@ -283,7 +314,8 @@ describe("InputHandler AutoUpgrade", () => {
       expect(mockEmit).toHaveBeenCalledWith(
         expect.objectContaining({
           x: Number.MIN_SAFE_INTEGER,
-          y: Number.MIN_SAFE_INTEGER,
+            y: Number.MIN_SAFE_INTEGER,
+            levels: 1,
         }),
       );
     });
@@ -304,6 +336,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: NaN,
           y: NaN,
+          levels: 1,
         }),
       );
     });
@@ -324,6 +357,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: Infinity,
           y: -Infinity,
+          levels: 1,
         }),
       );
     });
@@ -347,6 +381,7 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: 150,
           y: 250,
+          levels: 1,
         }),
       );
     });
@@ -370,12 +405,14 @@ describe("InputHandler AutoUpgrade", () => {
         expect.objectContaining({
           x: 150,
           y: 250,
+          levels: 1,
         }),
       );
       expect(mockListener2).toHaveBeenCalledWith(
         expect.objectContaining({
           x: 150,
           y: 250,
+          levels: 1,
         }),
       );
     });

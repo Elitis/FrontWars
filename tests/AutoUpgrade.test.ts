@@ -18,6 +18,16 @@ describe("AutoUpgrade Feature", () => {
       expect(event.y).toBe(200);
     });
 
+    test("should default levels to 1", () => {
+      const event = new AutoUpgradeEvent(10, 20);
+      expect(event.levels).toBe(1);
+    });
+
+    test("should accept custom levels value", () => {
+      const event = new AutoUpgradeEvent(10, 20, 5);
+      expect(event.levels).toBe(5);
+    });
+
     test("should emit AutoUpgradeEvent when created", () => {
       const mockEmit = jest.spyOn(eventBus, "emit");
 
@@ -147,7 +157,7 @@ describe("AutoUpgrade Feature", () => {
       const event = new AutoUpgradeEvent(100, 200);
       const eventString = JSON.stringify(event);
       const parsedEvent = JSON.parse(eventString);
-      expect(parsedEvent).toStrictEqual({ x: 100, y: 200 });
+      expect(parsedEvent).toStrictEqual({ x: 100, y: 200, levels: 1 });
     });
   });
 });
